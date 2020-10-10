@@ -18,7 +18,7 @@ type MicroService struct {
 	engine         *gin.Engine
 	enableHttpCORS bool
 	startTime      time.Time
-	logger zerolog.Logger
+	logger         zerolog.Logger
 }
 
 type MicroServiceOption func(ms *MicroService)
@@ -33,7 +33,6 @@ func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	return ms
 }
 
-
 func (ms *MicroService) ListenAndServer(port int) {
 
 	addr := fmt.Sprintf(":%d", port)
@@ -41,7 +40,7 @@ func (ms *MicroService) ListenAndServer(port int) {
 	if err != nil {
 		ms.logger.Panic().Err(err).Msg("create net listener fail")
 	}
-	// run http
+
 	ms.httpServer(listener)
 	ms.forever()
 }
@@ -54,14 +53,13 @@ func (ms *MicroService) httpServer(listener net.Listener) {
 	}()
 }
 
-func (ms *MicroService) forever()  {
+func (ms *MicroService) forever() {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
 	ms.shutdown()
 }
 
-
-func (ms *MicroService) shutdown()  {
+func (ms *MicroService) shutdown() {
 	ms.logger.Info().Msg("ms shutdown")
 }
