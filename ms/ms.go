@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/BUGLAN/kit/logutil"
 	"github.com/gin-gonic/gin"
+	_ "github.com/mkevac/debugcharts"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"net"
@@ -26,6 +27,7 @@ type MicroServiceOption func(ms *MicroService)
 func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	ms := &MicroService{
 		logger: log.With().Str("component", "ms").Caller().Logger(),
+		engine: gin.Default(),
 	}
 	for _, opt := range opts {
 		opt(ms)
@@ -47,7 +49,7 @@ func (ms *MicroService) ListenAndServer(port int) {
 
 func (ms *MicroService) httpServer(listener net.Listener) {
 	go func() {
-		if err := ms.engine.RunListener(listener); err != nil {
+		if err :=  ms.engine.RunListener(listener); err != nil {
 			ms.logger.Panic().Err(err).Msg("run listener fail")
 		}
 	}()
