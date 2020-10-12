@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "github.com/BUGLAN/kit/ms/grpc-example/pb";
+
+service Greet {
+  rpc Ping(PingRequest) returns (PingReply) {}
+}
+
+message PingRequest {
+  string msg = 1;
+}
+
+message PingReply {
+  string msg = 1;
+}

@@ -5,9 +5,13 @@ import (
 	"fmt"
 	_ "github.com/BUGLAN/kit/logutil"
 	"github.com/gin-gonic/gin"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	_ "github.com/mkevac/debugcharts"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"net"
 	"os"
 	"os/signal"
@@ -16,6 +20,11 @@ import (
 
 type MicroService struct {
 	ctx            context.Context
+	grpcUnaryInterceptors []grpc.UnaryServerInterceptor
+	grpcStreamInterceptors []grpc.StreamServerInterceptor
+	grpcPreprocess []func(srv *grpc.Server)
+	enableHTTP     bool
+	enableGRPC     bool
 	engine         *gin.Engine
 	enableHttpCORS bool
 	startTime      time.Time
@@ -27,7 +36,6 @@ type MicroServiceOption func(ms *MicroService)
 func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	ms := &MicroService{
 		logger: log.With().Str("component", "ms").Caller().Logger(),
-		engine: gin.Default(),
 	}
 	for _, opt := range opts {
 		opt(ms)
@@ -35,22 +43,63 @@ func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	return ms
 }
 
-func (ms *MicroService) ListenAndServer(port int) {
+func WithGinHttpServer(engine *gin.Engine) MicroServiceOption {
+	return func(ms *MicroService) {
+		ms.engine = engine
+	}
+}
 
+func WithPrometheus() MicroServiceOption {
+	return func(ms *MicroService) {
+		// grpc metrics
+		ms.grpcUnaryInterceptors = append(ms.grpcUnaryInterceptors, grpc_prometheus.UnaryServerInterceptor)
+		ms.grpcStreamInterceptors = append(ms.grpcStreamInterceptors, grpc_prometheus.StreamServerInterceptor)
+		ms.grpcPreprocess = append(ms.grpcPreprocess, func(srv *grpc.Server) {
+			grpc_prometheus.Register(srv)
+		})
+
+		// http metrics
+		ms.engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	}
+}
+
+func WithGRPC(preprocess func(srv *grpc.Server)) MicroServiceOption {
+	return func(ms *MicroService) {
+		ms.grpcPreprocess = append(ms.grpcPreprocess, preprocess)
+	}
+}
+
+func (ms *MicroService) ListenAndServer(port int) {
 	addr := fmt.Sprintf(":%d", port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		ms.logger.Panic().Err(err).Msg("create net listener fail")
 	}
 
+	grpcServer := grpc.NewServer()
+	for _, f := range ms.grpcPreprocess {
+		f(grpcServer)
+	}
+	reflection.Register(grpcServer)
+
+	ms.grpcServer(grpcServer, listener)
 	ms.httpServer(listener)
 	ms.forever()
 }
 
 func (ms *MicroService) httpServer(listener net.Listener) {
 	go func() {
-		if err :=  ms.engine.RunListener(listener); err != nil {
+		if err := ms.engine.RunListener(listener); err != nil {
 			ms.logger.Panic().Err(err).Msg("run listener fail")
+		}
+	}()
+}
+
+func (ms *MicroService) grpcServer(grpcServer *grpc.Server, listener net.Listener) {
+	go func() {
+		err := grpcServer.Serve(listener)
+		if err != nil {
+			ms.logger.Panic().Err(err).Msg("grpc server fail")
 		}
 	}()
 }
