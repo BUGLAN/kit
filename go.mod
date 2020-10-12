@@ -3,6 +3,7 @@ module github.com/BUGLAN/kit
 go 1.13
 
 require (
+	github.com/fullstorydev/grpcui v1.0.1-0.20201009153854-a01834a17ef3
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.4.0 // indirect
 	github.com/golang/protobuf v1.4.2

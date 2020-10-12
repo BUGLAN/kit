@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	_ "github.com/BUGLAN/kit/logutil"
+	"github.com/fullstorydev/grpcui/standalone"
 	"github.com/gin-gonic/gin"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	_ "github.com/mkevac/debugcharts"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
@@ -52,10 +53,10 @@ func WithGinHttpServer(engine *gin.Engine) MicroServiceOption {
 func WithPrometheus() MicroServiceOption {
 	return func(ms *MicroService) {
 		// grpc metrics
-		ms.grpcUnaryInterceptors = append(ms.grpcUnaryInterceptors, grpc_prometheus.UnaryServerInterceptor)
-		ms.grpcStreamInterceptors = append(ms.grpcStreamInterceptors, grpc_prometheus.StreamServerInterceptor)
+		ms.grpcUnaryInterceptors = append(ms.grpcUnaryInterceptors, grpcprometheus.UnaryServerInterceptor)
+		ms.grpcStreamInterceptors = append(ms.grpcStreamInterceptors, grpcprometheus.StreamServerInterceptor)
 		ms.grpcPreprocess = append(ms.grpcPreprocess, func(srv *grpc.Server) {
-			grpc_prometheus.Register(srv)
+			grpcprometheus.Register(srv)
 		})
 
 		// http metrics
@@ -80,8 +81,8 @@ func (ms *MicroService) ListenAndServer(port int) {
 	for _, f := range ms.grpcPreprocess {
 		f(grpcServer)
 	}
-	reflection.Register(grpcServer)
 
+	reflection.Register(grpcServer)
 	ms.grpcServer(grpcServer, listener)
 	ms.httpServer(listener)
 	ms.forever()
@@ -101,6 +102,20 @@ func (ms *MicroService) grpcServer(grpcServer *grpc.Server, listener net.Listene
 		if err != nil {
 			ms.logger.Panic().Err(err).Msg("grpc server fail")
 		}
+		conn, err := grpc.Dial("127.0.0.1:5000")
+		if err != nil {
+			ms.logger.Panic().Err(err).Msg("dial local grpc server fail")
+		}
+		defer func() {
+			conn.Close()
+		}()
+
+		grpcUIHandler, err := standalone.HandlerViaReflection(ms.ctx, conn, listener.Addr().String())
+		if err != nil {
+			ms.logger.Panic().Err(err).Msg("enable grpcui fail")
+		}
+
+		ms.engine.GET("/debug/grpc-ui", gin.WrapH(grpcUIHandler))
 	}()
 }
 
