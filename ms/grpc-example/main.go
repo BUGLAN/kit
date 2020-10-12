@@ -28,5 +28,5 @@ func main() {
 		}),
 		ms2.WithPrometheus(),
 	)
-	ms.ListenAndServer(5001)
+	ms.ListenAndServer(5000)
 }
