@@ -104,7 +104,7 @@ func (ms *MicroService) grpcServer(grpcServer *grpc.Server, listener net.Listene
 		}
 		conn, err := grpc.Dial("127.0.0.1:5000")
 		if err != nil {
-			ms.logger.Panic().Err(err).Msg("dial local grpc server fail")
+			ms.logger.Panic().Err(err).Msg("dial grpc server fail")
 		}
 		defer func() {
 			conn.Close()
