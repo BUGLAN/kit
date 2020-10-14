@@ -3,7 +3,7 @@ module github.com/BUGLAN/kit
 go 1.13
 
 require (
-	github.com/fullstorydev/grpcui v1.0.1-0.20201009153854-a01834a17ef3
+	github.com/fullstorydev/grpcui v1.1.0
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.4.0 // indirect
 	github.com/golang/protobuf v1.4.2
@@ -17,6 +17,8 @@ require (
 	github.com/ugorji/go v1.1.10 // indirect
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect
 	golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 // indirect
+	golang.org/x/text v0.3.2
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
 	google.golang.org/grpc v1.33.0
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v2 v2.3.0 // indirect
