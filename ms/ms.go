@@ -82,8 +82,8 @@ func (ms *MicroService) ListenAndServer(port int) {
 		f(grpcServer)
 	}
 
-	reflection.Register(grpcServer)
 	ms.grpcServer(grpcServer, listener)
+	reflection.Register(grpcServer)
 	ms.httpServer(listener)
 	ms.forever()
 }
@@ -97,23 +97,26 @@ func (ms *MicroService) httpServer(listener net.Listener) {
 }
 
 func (ms *MicroService) grpcServer(grpcServer *grpc.Server, listener net.Listener) {
-	err := grpcServer.Serve(listener)
-	if err != nil {
-		ms.logger.Panic().Err(err).Msg("grpc server fail")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	defer func() {
-		cancel()
-	}()
-	conn, err := grpc.DialContext(ctx, "127.0.0.1:5000")
-	if err != nil {
-		ms.logger.Panic().Err(err).Msg("dial grpc server fail")
-	}
-	defer func() {
-		conn.Close()
-	}()
-
 	go func() {
+		err := grpcServer.Serve(listener)
+		if err != nil {
+			ms.logger.Panic().Err(err).Msg("grpc server fail")
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer func() {
+			cancel()
+		}()
+
+		conn, err := grpc.DialContext(ctx, "127.0.0.1:5000")
+		if err != nil {
+			ms.logger.Panic().Err(err).Msg("dial grpc server fail")
+		}
+
+		defer func() {
+			conn.Close()
+		}()
+
 		grpcUIHandler, err := standalone.HandlerViaReflection(ms.ctx, conn, listener.Addr().String())
 		if err != nil {
 			ms.logger.Panic().Err(err).Msg("enable grpcui fail")
@@ -121,7 +124,6 @@ func (ms *MicroService) grpcServer(grpcServer *grpc.Server, listener net.Listene
 
 		ms.engine.GET("/debug/grpc-ui", gin.WrapH(grpcUIHandler))
 	}()
-	time.Sleep(time.Second * 3)
 }
 
 func (ms *MicroService) forever() {
