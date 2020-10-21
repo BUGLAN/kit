@@ -14,10 +14,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
 )
+
+const defaultTimeout = 5
 
 type MicroService struct {
 	ctx                    context.Context
@@ -26,10 +29,14 @@ type MicroService struct {
 	grpcPreprocess         []func(srv *grpc.Server)
 	enableHTTP             bool
 	enableGRPC             bool
+	debug                  bool
 	engine                 *gin.Engine
 	enableHttpCORS         bool
 	startTime              time.Time
 	logger                 zerolog.Logger
+	grpcPort               int
+	httpPort               int
+	mux                    *http.ServeMux
 }
 
 type MicroServiceOption func(ms *MicroService)
@@ -37,6 +44,9 @@ type MicroServiceOption func(ms *MicroService)
 func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	ms := &MicroService{
 		logger: log.With().Str("component", "ms").Caller().Logger(),
+		ctx:    context.Background(),
+		engine: gin.Default(),
+		mux:    http.NewServeMux(),
 	}
 	for _, opt := range opts {
 		opt(ms)
@@ -64,66 +74,87 @@ func WithPrometheus() MicroServiceOption {
 	}
 }
 
-func WithGRPC(preprocess func(srv *grpc.Server)) MicroServiceOption {
+func WithGinHTTPServer(port int) MicroServiceOption {
 	return func(ms *MicroService) {
+
+	}
+}
+
+func WithGRPC(port int, preprocess func(srv *grpc.Server)) MicroServiceOption {
+	return func(ms *MicroService) {
+		ms.grpcPort = port
 		ms.grpcPreprocess = append(ms.grpcPreprocess, preprocess)
 	}
 }
 
 func (ms *MicroService) ListenAndServer(port int) {
-	addr := fmt.Sprintf(":%d", port)
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		ms.logger.Panic().Err(err).Msg("create net listener fail")
-	}
+	ms.grpcServer()
+	ms.enableDebug()
+	//ms.httpServer(listener)
 
-	grpcServer := grpc.NewServer()
-	for _, f := range ms.grpcPreprocess {
-		f(grpcServer)
-	}
+	// http server
+	go func() {
+		ms.engine.Run(fmt.Sprintf(":%d", port))
+	}()
 
-	ms.grpcServer(grpcServer, listener)
-	reflection.Register(grpcServer)
-	ms.httpServer(listener)
+	// debug tools
+	go func() {
+		http.ListenAndServe(":8888", ms.mux)
+	}()
+
 	ms.forever()
 }
 
-func (ms *MicroService) httpServer(listener net.Listener) {
+//func (ms *MicroService) httpServer(listener net.Listener) {
+//	go func() {
+//		if err := ms.engine.RunListener(listener); err != nil {
+//			ms.logger.Panic().Err(err).Msg("run listener fail")
+//		}
+//	}()
+//}
+
+func (ms *MicroService) grpcServer() {
+	s := grpc.NewServer()
+	for _, f := range ms.grpcPreprocess {
+		f(s)
+	}
+	reflection.Register(s)
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", ms.grpcPort))
+	if err != nil {
+		ms.logger.Panic().Err(err).Msg("create net listener fail")
+	}
 	go func() {
-		if err := ms.engine.RunListener(listener); err != nil {
-			ms.logger.Panic().Err(err).Msg("run listener fail")
+		err := s.Serve(listener)
+		if err != nil {
+			ms.logger.Panic().Err(err).Msg("grpc server fail")
 		}
 	}()
 }
 
-func (ms *MicroService) grpcServer(grpcServer *grpc.Server, listener net.Listener) {
+func (ms *MicroService) enableDebug() {
+	addr := fmt.Sprintf(":%d", ms.grpcPort)
 	go func() {
-		err := grpcServer.Serve(listener)
-		if err != nil {
-			ms.logger.Panic().Err(err).Msg("grpc server fail")
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*defaultTimeout)
 		defer func() {
 			cancel()
 		}()
 
-		conn, err := grpc.DialContext(ctx, "127.0.0.1:5000")
+		conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure())
 		if err != nil {
 			ms.logger.Panic().Err(err).Msg("dial grpc server fail")
 		}
-
 		defer func() {
 			conn.Close()
 		}()
 
-		grpcUIHandler, err := standalone.HandlerViaReflection(ms.ctx, conn, listener.Addr().String())
+		h, err := standalone.HandlerViaReflection(ms.ctx, conn, addr)
 		if err != nil {
 			ms.logger.Panic().Err(err).Msg("enable grpcui fail")
 		}
-
-		ms.engine.GET("/debug/grpc-ui", gin.WrapH(grpcUIHandler))
+		ms.logger.Info().Msg("enable grpc ui")
+		ms.mux.Handle("/grpcui/", http.StripPrefix("/grpcui", h))
 	}()
+
 }
 
 func (ms *MicroService) forever() {

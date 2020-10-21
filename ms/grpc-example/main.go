@@ -4,7 +4,6 @@ import (
 	"context"
 	ms2 "github.com/BUGLAN/kit/ms"
 	"github.com/BUGLAN/kit/ms/grpc-example/pb"
-	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 )
 
@@ -22,11 +21,10 @@ func (g GreetService) Ping(ctx context.Context, request *pb.PingRequest) (*pb.Pi
 func main() {
 	s := NewGreetService()
 	ms := ms2.NewMicroService(
-		ms2.WithGinHttpServer(gin.Default()),
-		ms2.WithGRPC(func(srv *grpc.Server) {
+		ms2.WithGRPC(5000, func(srv *grpc.Server) {
 			pb.RegisterGreetServer(srv, s)
 		}),
 		ms2.WithPrometheus(),
 	)
-	ms.ListenAndServer(5000)
+	ms.ListenAndServer(5001)
 }
