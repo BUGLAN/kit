@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/BUGLAN/kit/internal/example/grpc-example/pb"
 	ms2 "github.com/BUGLAN/kit/ms"
-	"github.com/BUGLAN/kit/ms/grpc-example/pb"
 	"google.golang.org/grpc"
 )
 

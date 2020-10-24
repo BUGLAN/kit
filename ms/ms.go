@@ -3,6 +3,8 @@ package ms
 import (
 	"context"
 	"fmt"
+	"github.com/BUGLAN/kit/config"
+	"github.com/BUGLAN/kit/logutil"
 	_ "github.com/BUGLAN/kit/logutil"
 	"github.com/fullstorydev/grpcui/standalone"
 	"github.com/gin-gonic/gin"
@@ -10,7 +12,6 @@ import (
 	_ "github.com/mkevac/debugcharts"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"net"
@@ -37,17 +38,25 @@ type MicroService struct {
 	grpcPort               int
 	httpPort               int
 	mux                    *http.ServeMux
+	config                 *config.KitConfig
 }
 
 type MicroServiceOption func(ms *MicroService)
 
 func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	ms := &MicroService{
-		logger: log.With().Str("component", "ms").Caller().Logger(),
+		logger: logutil.NewLogger("component", "ms"),
 		ctx:    context.Background(),
 		engine: gin.Default(),
 		mux:    http.NewServeMux(),
+		config: config.NewKitConfig(),
 	}
+
+	if *config.Debug {
+		ms.debug = true
+		logutil.SetGlobalLevel("debug")
+	}
+
 	for _, opt := range opts {
 		opt(ms)
 	}
@@ -90,7 +99,7 @@ func WithGRPC(port int, preprocess func(srv *grpc.Server)) MicroServiceOption {
 func (ms *MicroService) ListenAndServer(port int) {
 	ms.grpcServer()
 	ms.enableDebug()
-	//ms.httpServer(listener)
+	// ms.httpServer(listener)
 
 	// http server
 	go func() {
@@ -105,13 +114,13 @@ func (ms *MicroService) ListenAndServer(port int) {
 	ms.forever()
 }
 
-//func (ms *MicroService) httpServer(listener net.Listener) {
+// func (ms *MicroService) httpServer(listener net.Listener) {
 //	go func() {
 //		if err := ms.engine.RunListener(listener); err != nil {
 //			ms.logger.Panic().Err(err).Msg("run listener fail")
 //		}
 //	}()
-//}
+// }
 
 func (ms *MicroService) grpcServer() {
 	s := grpc.NewServer()
@@ -154,7 +163,6 @@ func (ms *MicroService) enableDebug() {
 		ms.logger.Info().Msg("enable grpc ui")
 		ms.mux.Handle("/grpcui/", http.StripPrefix("/grpcui", h))
 	}()
-
 }
 
 func (ms *MicroService) forever() {

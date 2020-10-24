@@ -1,16 +1,18 @@
 package logutil
 
 import (
-	"flag"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
-var Debug = flag.Bool("debug", false, "sets log level to debug")
+func NewLogger(key, val string) zerolog.Logger {
+	return log.With().Str(key, val).Caller().Logger()
+}
 
-func init() {
-	flag.Parse()
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if *Debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+func SetGlobalLevel(l string) {
+	level, err := zerolog.ParseLevel(l)
+	if err != nil {
+		panic(err)
 	}
+	zerolog.SetGlobalLevel(level)
 }
