@@ -31,7 +31,7 @@ type MicroService struct {
 	enableHTTP             bool
 	enableGRPC             bool
 	debug                  bool
-	engine                 *gin.Engine
+	Engine                 *gin.Engine
 	enableHttpCORS         bool
 	startTime              time.Time
 	logger                 zerolog.Logger
@@ -47,13 +47,13 @@ func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	ms := &MicroService{
 		logger: logutil.NewLogger("component", "ms"),
 		ctx:    context.Background(),
-		engine: gin.Default(),
 		mux:    http.NewServeMux(),
 		config: config.NewKitConfig(),
 	}
 
 	if *config.Debug {
 		ms.debug = true
+		ms.logger.Info().Msg("Enable debug mode")
 		logutil.SetGlobalLevel("debug")
 	}
 
@@ -63,9 +63,10 @@ func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	return ms
 }
 
-func WithGinHttpServer(engine *gin.Engine) MicroServiceOption {
+func WithGinHTTP() MicroServiceOption {
 	return func(ms *MicroService) {
-		ms.engine = engine
+		ms.enableHTTP = true
+		ms.Engine = gin.Default()
 	}
 }
 
@@ -79,36 +80,33 @@ func WithPrometheus() MicroServiceOption {
 		})
 
 		// http metrics
-		ms.engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	}
-}
-
-func WithGinHTTPServer(port int) MicroServiceOption {
-	return func(ms *MicroService) {
-
+		ms.Engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	}
 }
 
 func WithGRPC(port int, preprocess func(srv *grpc.Server)) MicroServiceOption {
 	return func(ms *MicroService) {
+		ms.enableGRPC = true
 		ms.grpcPort = port
 		ms.grpcPreprocess = append(ms.grpcPreprocess, preprocess)
 	}
 }
 
 func (ms *MicroService) ListenAndServer(port int) {
-	ms.grpcServer()
-	ms.enableDebug()
-	// ms.httpServer(listener)
+	if ms.enableGRPC {
+		ms.grpcServer()
+	}
 
 	// http server
 	go func() {
-		ms.engine.Run(fmt.Sprintf(":%d", port))
+		ms.Engine.Run(fmt.Sprintf(":%d", port))
 	}()
 
-	// debug tools
 	go func() {
-		http.ListenAndServe(":8888", ms.mux)
+		if ms.enableGRPC && ms.debug {
+			ms.enableDebug()
+			http.ListenAndServe(":8888", ms.mux)
+		}
 	}()
 
 	ms.forever()
