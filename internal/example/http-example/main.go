@@ -12,20 +12,17 @@ func main() {
 	// config micro service middleware, like trace, monitor， metrics(jaeger, prometheus, grafana, grpc)
 	// start micro service
 
-	engine := buildEngine()
 	server := ms.NewMicroService(
-		ms.WithGinHttpServer(engine),
+		ms.WithGinHTTP(handler),
 		ms.WithPrometheus(),
-		)
+	)
 	server.ListenAndServer(5000)
 }
 
-func buildEngine() *gin.Engine {
-	engine := gin.Default()
+func handler(engine *gin.Engine) {
 	engine.GET("/ping", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
-	return engine
 }

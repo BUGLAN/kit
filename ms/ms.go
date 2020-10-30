@@ -31,7 +31,7 @@ type MicroService struct {
 	enableHTTP             bool
 	enableGRPC             bool
 	debug                  bool
-	Engine                 *gin.Engine
+	engine                 *gin.Engine
 	enableHttpCORS         bool
 	startTime              time.Time
 	logger                 zerolog.Logger
@@ -63,10 +63,11 @@ func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	return ms
 }
 
-func WithGinHTTP() MicroServiceOption {
+func WithGinHTTP(handler func(engine *gin.Engine)) MicroServiceOption {
 	return func(ms *MicroService) {
 		ms.enableHTTP = true
-		ms.Engine = gin.Default()
+		ms.engine = gin.Default()
+		handler(ms.engine)
 	}
 }
 
@@ -80,7 +81,7 @@ func WithPrometheus() MicroServiceOption {
 		})
 
 		// http metrics
-		ms.Engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
+		ms.engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	}
 }
 
@@ -99,7 +100,7 @@ func (ms *MicroService) ListenAndServer(port int) {
 
 	// http server
 	go func() {
-		ms.Engine.Run(fmt.Sprintf(":%d", port))
+		ms.engine.Run(fmt.Sprintf(":%d", port))
 	}()
 
 	go func() {
