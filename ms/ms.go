@@ -45,7 +45,7 @@ type MicroServiceOption func(ms *MicroService)
 
 func NewMicroService(opts ...MicroServiceOption) *MicroService {
 	ms := &MicroService{
-		logger: logutil.NewLogger("component", "ms"),
+		logger: logutil.NewLogger("ms.component", "ms"),
 		ctx:    context.Background(),
 		mux:    http.NewServeMux(),
 		config: config.NewKitConfig(),

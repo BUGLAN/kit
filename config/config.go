@@ -26,7 +26,7 @@ type Option func(c *KitConfig)
 
 func NewKitConfig(opts ...Option) *KitConfig {
 	c := &KitConfig{
-		logger:  logutil.NewLogger("component", "config"),
+		logger:  logutil.NewLogger("ms.component", "config"),
 		Viper:   viper.New(),
 		FlagSet: &pflag.FlagSet{},
 	}
