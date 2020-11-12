@@ -7,17 +7,10 @@ import (
 )
 
 func main() {
-	// config parser, (struct, env, yaml, toml)
-	// init middleware, (support mysql, redis, mongo, es)
-	// config micro service middleware, like trace, monitor， metrics(jaeger, prometheus, grafana, grpc)
-	// start micro service
-
 	srv := ms.NewMicroService(
 		ms.WithGin(handler).WithPrometheus().Listen(5000),
 	)
-
 	srv.Start()
-
 }
 
 func handler(engine *gin.Engine) {
