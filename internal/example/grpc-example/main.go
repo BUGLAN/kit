@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"github.com/BUGLAN/kit/internal/example/grpc-example/pb"
-	ms2 "github.com/BUGLAN/kit/ms"
+	"github.com/BUGLAN/kit/ms"
 	"google.golang.org/grpc"
 )
 
@@ -20,11 +20,10 @@ func (g GreetService) Ping(ctx context.Context, request *pb.PingRequest) (*pb.Pi
 
 func main() {
 	s := NewGreetService()
-	ms := ms2.NewMicroService(
-		ms2.WithGRPC(5000, func(srv *grpc.Server) {
+	srv := ms.NewMicroService(
+		ms.WithGRPC(func(srv *grpc.Server) {
 			pb.RegisterGreetServer(srv, s)
-		}),
-		ms2.WithPrometheus(),
+		}).WithPrometheus().WithGRPCUI(5001).Listen(5000),
 	)
-	ms.ListenAndServer(5001)
+	srv.Start()
 }

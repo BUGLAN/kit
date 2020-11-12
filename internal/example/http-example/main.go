@@ -12,11 +12,12 @@ func main() {
 	// config micro service middleware, like trace, monitor， metrics(jaeger, prometheus, grafana, grpc)
 	// start micro service
 
-	server := ms.NewMicroService(
-		ms.WithGinHTTP(handler),
-		ms.WithPrometheus(),
+	srv := ms.NewMicroService(
+		ms.WithGin(handler).WithPrometheus().Listen(5000),
 	)
-	server.ListenAndServer(5000)
+
+	srv.Start()
+
 }
 
 func handler(engine *gin.Engine) {
