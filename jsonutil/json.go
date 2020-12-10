@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+
+	"github.com/k0kubun/pp"
 )
 
 func OutJSON(data interface{}) {
@@ -15,4 +17,9 @@ func OutJSON(data interface{}) {
 	_, _ = os.Stdout.Write(b)
 }
 
-
+func OutStruct(data interface{}) {
+	_, err := pp.Print(data)
+	if err != nil {
+		log.Println(err)
+	}
+}
