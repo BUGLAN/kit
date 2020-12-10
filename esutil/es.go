@@ -1,4 +1,4 @@
-package util
+package elasticutil
 
 import (
 	"encoding/json"
@@ -6,17 +6,8 @@ import (
 	"os"
 )
 
-func OutJSON(data interface{}) {
-	b, err := json.MarshalIndent(data, "", "	")
-	if err != nil {
-		log.Printf("OutJSON MarshalIndent fail, err is %v \n", err)
-		return
-	}
-	_, _ = os.Stdout.Write(b)
-}
-
-// OutElasticDSL(query.Source())
-func OutElasticDSL(data interface{}, err error) {
+// OutDSL OutDSL(query.Source())
+func OutDSL(data interface{}, err error) {
 	if err != nil {
 		log.Printf("query.Source() has err, err is %v \n", err)
 		return
