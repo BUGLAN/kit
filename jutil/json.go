@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-    "fmt"
 
 	"github.com/k0kubun/pp"
 )
@@ -15,8 +14,8 @@ func OutJSON(data interface{}) {
 		log.Printf("OutJSON MarshalIndent fail, err is %v \n", err)
 		return
 	}
+	b = append(b, '\n')
 	_, _ = os.Stdout.Write(b)
-    fmt.Println()
 }
 
 func OutStruct(data interface{}) {
