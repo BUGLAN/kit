@@ -1,4 +1,4 @@
-package main
+package futil
 
 import (
 	"encoding/json"
