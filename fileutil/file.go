@@ -7,14 +7,6 @@ import (
 	"os"
 )
 
-func OutJSON(data interface{}) {
-	b, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		fmt.Println("fileutil json marshal fail, err is ", err)
-	}
-	_, _ = os.Stdout.Write(b)
-}
-
 func WriteFile(filename string, data interface{}) {
 	b, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
