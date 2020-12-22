@@ -1,4 +1,4 @@
-package elasticutil
+package esutil
 
 import (
 	"encoding/json"

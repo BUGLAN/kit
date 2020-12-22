@@ -1,4 +1,4 @@
-package elasticutil
+package esutil
 
 func ExampleOutDSL() {
 	testMap := map[string]string{"hello": "world"}
