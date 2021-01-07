@@ -8,15 +8,15 @@ import (
 )
 
 var cmd = &cobra.Command{
-	Use:   "kit",
-	Short: "Kit is a command-line application for coding",
+	Use:   "cmd",
+	Short: "Cmd is a command-line application for coding",
 }
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the kit version",
+	Short: "Print the cmd version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("kit v0.1.4")
+		fmt.Println("cmd v0.1.6")
 	},
 }
 
