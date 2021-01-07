@@ -12,10 +12,6 @@ var cmd = &cobra.Command{
 	Short: "Kit is a command-line application for coding",
 }
 
-func init() {
-	cmd.AddCommand()
-}
-
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the kit version",
