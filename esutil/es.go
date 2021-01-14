@@ -15,7 +15,7 @@ func OutDSL(data interface{}, err error) {
 
 	m := map[string]interface{}{"query": data}
 
-	b, err := json.MarshalIndent(m, "", "	")
+	b, err := json.MarshalIndent(m, "", "   ")
 	if err != nil {
 		log.Printf("OutElasticDSL MarshalIndent fail, err is %v \n", err)
 		return
