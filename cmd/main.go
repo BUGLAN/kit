@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/BUGLAN/kit/cmd/b"
+	"github.com/BUGLAN/kit/cmd/t"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -21,8 +22,11 @@ var versionCmd = &cobra.Command{
 }
 
 func init() {
-	cmd.AddCommand(versionCmd)
-	cmd.AddCommand(b.BsonParseCmd)
+	cmd.AddCommand(
+		versionCmd,
+		b.BsonParseCmd,
+		t.BsonTimeStampCmd,
+	)
 }
 
 func main() {

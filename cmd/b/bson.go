@@ -18,7 +18,7 @@ var BsonParseCmd = &cobra.Command{
 
 func parseObjectIdTime(hex string) {
 	if !bson.IsObjectIdHex(hex) {
-		fmt.Printf("hex: %s is not right ObjectId\n", hex)
+		fmt.Printf("[ERROR] hex: %s is not right ObjectId\n", hex)
 		return
 	}
 
