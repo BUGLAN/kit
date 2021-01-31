@@ -3,12 +3,13 @@ package ms
 import (
 	"context"
 	"fmt"
-	"github.com/fullstorydev/grpcui/standalone"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/fullstorydev/grpcui/standalone"
 
 	"github.com/BUGLAN/kit/config"
 	"github.com/BUGLAN/kit/logutil"
